@@ -1,0 +1,44 @@
+name: Sync with upstream
+
+on:
+  schedule:
+    # 每天 UTC 时间 0:00 运行（可根据需要调整）
+    - cron: '0 0 * * *'
+  workflow_dispatch:  # 允许手动在 GitHub 页面上触发
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action Bot"
+
+      - name: Add upstream remote
+        run: |
+          git remote add upstream https://github.com/vedderb/bldc.git || true
+          git remote -v
+
+      - name: Fetch upstream
+        run: |
+          git fetch upstream master
+
+      - name: Merge upstream changes
+        run: |
+          git checkout master
+          git merge upstream/master --no-edit || echo "Merge completed (may have conflicts)"
+
+      - name: Push to origin
+        run: |
+          git push origin master
+        continue-on-error: true
